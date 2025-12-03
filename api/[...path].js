@@ -5,7 +5,7 @@ export const config = {
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  const apiPath = url.pathname.replace('/api/proxy', ''); // 去掉我们的代理路径前缀
+  const apiPath = url.pathname.replace(/^\/api/, '');
   const targetUrl = `https://generativelanguage.googleapis.com${apiPath}${url.search}`;
 
   const newHeaders = new Headers();
