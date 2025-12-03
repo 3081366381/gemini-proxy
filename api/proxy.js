@@ -1,12 +1,24 @@
 export const config = {
   runtime: 'edge',
-  regions: ['iad1'], // 强制美国华盛顿节点
+  regions: ['iad1'],
 };
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  const apiPath = url.pathname.replace(/^\/api/, '');
-  const targetUrl = `https://generativelanguage.googleapis.com${apiPath}${url.search}`;
+  
+  // 核心修改：我们不用路径匹配了，太容易错。我们直接用 ?path=/v1beta/models 参数来传！
+  // 这样 Vercel 绝对不会报 404，因为文件路径就是死的 /api/proxy
+  const path = url.searchParams.get('path');
+  
+  if (!path) {
+    return new Response('Missing path parameter', { status: 400 });
+  }
+
+  // 剩下的查询参数（比如 key）要补回去
+  const newSearchParams = new URLSearchParams(url.searchParams);
+  newSearchParams.delete('path'); // 把 path 拿出来，剩下的就是参数
+  
+  const targetUrl = `https://generativelanguage.googleapis.com${path}?${newSearchParams.toString()}`;
 
   const newHeaders = new Headers();
   const contentType = request.headers.get('content-type');
